@@ -69,4 +69,4 @@ pip install -r requirements.txt
 
 
 ## 🙏 Acknowledgements
-This readme file was assisted by AI tools (ChatGPT) to help with structuring and formatting.
+This readme file was assisted by AI tools (ChatGPT) to help with structuring and formatting. All other work inside was created without any use of AI tools.
