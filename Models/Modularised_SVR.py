@@ -11,7 +11,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
 from matplotlib import pyplot as plt
 
-start_date = '2000-01-01'
+start_date = '2010-01-01'
 end_date = '2025-12-31'
 
 ret_cols = ['DlyPrcRet']
