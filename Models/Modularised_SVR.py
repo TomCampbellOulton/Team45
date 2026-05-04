@@ -11,6 +11,9 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
 from matplotlib import pyplot as plt
 
+start_date = '2000-01-01'
+end_date = '2025-12-31'
+
 ret_cols = ['DlyPrcRet']
 columns = ['open_ret', 'high_ret', 'low_ret', 'close_ret']
 price_cols = ['open', 'high', 'low', 'close']
@@ -142,7 +145,7 @@ def get_data(start_date, end_date, data_file="S&P 500 Composite.csv"):
 
 
 def main():
-    df = get_data('2010-01-01', '2025-12-31')
+    df = get_data(start_date, end_date)
     lagnames = lagit(df, 5)
     df.dropna(inplace=True) #drop NaN values
     train,test = train_test_split(df, test_size=0.15, shuffle=False, random_state=0)
