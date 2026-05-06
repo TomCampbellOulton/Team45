@@ -82,17 +82,17 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
     data = get_data(START_DATE, END_DATE)
     data["Date"] = data.index
     df_before_targets = feature_engineering(data)        # ← use df, not data
-    df   = build_targets(df_before_targets, N_STEPS)
+    df = build_targets(df_before_targets, N_STEPS)
 
     features, labels = get_features_and_labels(df, TARGET_COLS)   # numpy arrays
 
     SEQUENCE_LENGTH = 60
-    HIDDEN_SIZE     = 64
-    NUM_LAYERS      = 4
-    EPOCHS          = 30
-    LEARNING_RATE   = 0.001
-    BATCH_SIZE      = 64
-    OUTPUT_SIZE     = len(TARGET_COLS)
+    HIDDEN_SIZE = 64
+    NUM_LAYERS = 4
+    EPOCHS = 30
+    LEARNING_RATE = 0.001
+    BATCH_SIZE = 64
+    OUTPUT_SIZE = len(TARGET_COLS)
 
     # ── Fit scalers on training data ONLY (no test-set leakage) ────────────────
     n_train = int(len(features) * DATA_SPLIT_RATIOS[0])
