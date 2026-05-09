@@ -142,7 +142,7 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
         len(predicted),
         N_STEPS
     )
-    seed_open    = df["open"].values[test_indices[0] - 1]
+    seed_open = df["open"].values[test_indices[0] - 1]
 
     rmse_scores = compute_rmse(predicted, actual, actual_opens, mode=rmse_mode)
     print(f"DTR ({N_STEPS}-step ahead) RMSE [{rmse_mode}]: {rmse_scores}")
@@ -164,7 +164,7 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
         features_full = df_before_targets[feature_cols].values
         
         mean = features.mean(axis=0)
-        std  = features.std(axis=0) + 1e-8
+        std = features.std(axis=0) + 1e-8
         
         # Train on all labeled data
         future_dtr = DecisionTreeRegressor(

@@ -18,6 +18,8 @@ from backtest import main as bt
 from model_evaluator import main as me
 
 
+DATA_SPLIT_RATIOS = (0.8, 0.1, 0.1)
+
 # Hyperparemeter Tuning toggle
 RUN_TUNING = False
 
@@ -32,7 +34,7 @@ TUNING_MODELS = None
 TUNING_KWARGS = dict(
     start_date = "2010-01-01",
     end_date = "2025-12-31",
-    data_split_ratios = (0.8, 0.1, 0.1),
+    data_split_ratios = DATA_SPLIT_RATIOS,
     n_steps = 5,
     rmse_mode = "price",
 )
@@ -47,7 +49,7 @@ BAYESIAN_KWARGS = dict(n_trials=25, n_initial=5)
 
 
 # --- Configure prediction horizon ---
-# Set your target end date for predictions
+# Set your target end date for predictions - format of YYYY-MM-DD
 END_DATE = "2027-04-18"
 
 # Load just the data dates to find the last one
@@ -56,7 +58,7 @@ df_dates["Date"] = pd.to_datetime(df_dates["YYYYMMDD"], format="%Y%m%d")
 last_data_date = df_dates["Date"].max()
 last_data_date_str = last_data_date.strftime("%Y-%m-%d")
 
-# Calculate N_STEPS using actual NYSE trading calendar
+# Calculate N_STEPS using actual NYSE trading calendar - New York Stock Exchange calendar cos S&P500 is american, use appropriate stock exchange for the country ur stock is in
 if HAS_MARKET_CAL:
     try:
         nyse = get_calendar('NYSE')
