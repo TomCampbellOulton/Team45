@@ -9,12 +9,12 @@ from upgraded_utilities import get_data, feature_engineering, data_split, get_fe
 from model_utils import build_targets, build_result_df, TARGET_COLS, generate_trading_dates, generate_future_dates
 
 
-def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
-         DATA_SPLIT_RATIOS=(0.8, 0.0, 0.2),
-         N_STEPS=1,
-         rmse_mode="price",
-         FUTURE_STEPS=None,
-         return_metrics=False):
+def main(START_DATE = "2010-01-01", END_DATE = "2025-12-31",
+         DATA_SPLIT_RATIOS = (0.8, 0.0, 0.2),
+         N_STEPS = 1,
+         rmse_mode = "price",
+         FUTURE_STEPS = None,
+         return_metrics = False):
     """
     Seer returns actual observed OHLC prices, formatted identically to model outputs.
     
@@ -66,8 +66,8 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
     seed_open = df_before_targets["open"].values[test_start_idx - 1]
     
     # Build result dataframe using actual prices
-    result_df = build_result_df(actual_rel, actual_opens, idx=dates, 
-                                seed_open=seed_open, n_steps=N_STEPS)
+    result_df = build_result_df(actual_rel, actual_opens, idx = dates, 
+                                seed_open = seed_open, n_steps = N_STEPS)
     
     # ── Predict future rows if data extends beyond test window ────────────
     n_future = len(df_before_targets) - test_end
@@ -91,10 +91,10 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
         # Use the last daisy-chained close from test as continuation point
         continuation_close = result_df["daisy_chained_close"].iloc[-1]
         
-        future_df = build_result_df(future_rel, future_opens, idx=future_dates,
-                                    seed_open=seed_open, n_steps=N_STEPS,
-                                    continuation_close=continuation_close)
-        result_df = pd.concat([result_df, future_df], ignore_index=False)
+        future_df = build_result_df(future_rel, future_opens, idx = future_dates,
+                                    seed_open = seed_open, n_steps = N_STEPS,
+                                    continuation_close = continuation_close)
+        result_df = pd.concat([result_df, future_df], ignore_index = False)
     
     if return_metrics:
         # For Seer, RMSE is meaningless (it's perfect by definition)

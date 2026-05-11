@@ -11,7 +11,7 @@ from model_utils import build_targets, build_result_df, compute_rmse, build_resu
 
 class ANNModel(nn.Module):
 
-    def __init__(self, input_size, width=256, dropout=0.2):
+    def __init__(self, input_size, width = 256, dropout = 0.2):
         super().__init__()
         self.model = nn.Sequential(
             nn.Linear(input_size, width),  nn.ReLU(), nn.Dropout(dropout),
@@ -26,19 +26,19 @@ class ANNModel(nn.Module):
         return self.model(x)
 
 
-def make_ann_predict(epochs=50, lr=0.001, width=256, dropout=0.2, batch_size=32):
+def make_ann_predict(epochs = 50, lr = 0.001, width = 256, dropout = 0.2, batch_size = 32):
     # Added parameters for fine tuning
-    def ann_predict(feature_train_data, label_train_data, feature_test_data, k=None):
+    def ann_predict(feature_train_data, label_train_data, feature_test_data, k = None):
         # feature data is already standardised by walk_forward_validation
-        feature_train = torch.tensor(feature_train_data, dtype=torch.float32)
-        label_train = torch.tensor(label_train_data,   dtype=torch.float32)
-        feature_test  = torch.tensor(feature_test_data,  dtype=torch.float32)
+        feature_train = torch.tensor(feature_train_data, dtype = torch.float32)
+        label_train = torch.tensor(label_train_data,   dtype = torch.float32)
+        feature_test = torch.tensor(feature_test_data,  dtype = torch.float32)
 
         # Define the model with constraints defined above
-        model = ANNModel(feature_train_data.shape[1], width=width, dropout=dropout)
-        optimiser = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
+        model = ANNModel(feature_train_data.shape[1], width = width, dropout = dropout)
+        optimiser = optim.Adam(model.parameters(), lr = lr, weight_decay = 1e-5)
         loss_function = nn.MSELoss()
-        loader = DataLoader(TensorDataset(feature_train, label_train), batch_size=batch_size, shuffle=True)
+        loader = DataLoader(TensorDataset(feature_train, label_train), batch_size = batch_size, shuffle = True)
 
         # Train the model
         model.train()
@@ -57,19 +57,19 @@ def make_ann_predict(epochs=50, lr=0.001, width=256, dropout=0.2, batch_size=32)
     return ann_predict
 
 
-def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
-        DATA_SPLIT_RATIOS=(0.8, 0.1, 0.1),
-        N_STEPS=1,
-        rmse_mode="price",
+def main(START_DATE = "2010-01-01", END_DATE = "2025-12-31",
+        DATA_SPLIT_RATIOS = (0.8, 0.1, 0.1),
+        N_STEPS = 1,
+        rmse_mode = "price",
         # Tunable parameters
-        epochs=50,
-        lr=0.001,
-        width=256,
-        dropout=0.2,
-        batch_size=32,
+        epochs = 50,
+        lr = 0.001,
+        width = 256,
+        dropout = 0.2,
+        batch_size = 32,
         # Flag for tuning evaluation
-        FUTURE_STEPS=None,
-         return_metrics=False):
+        FUTURE_STEPS = None,
+         return_metrics = False):
     # If return metrics is true, returns (Dataframe, rmse dictionary) instead of just the dataframe
     # Will be used to retrieve scores without re-running or recomputing errors
 
@@ -92,8 +92,8 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
     # Get models predictions, ignored value is RMSE
     predicted, actual, _ = walk_forward_validation(
         features, labels,
-        make_ann_predict(epochs=epochs, lr=lr, width=width, dropout=dropout, batch_size=batch_size),
-        data_split_ratios=DATA_SPLIT_RATIOS,
+        make_ann_predict(epochs = epochs, lr = lr, width = width, dropout = dropout, batch_size = batch_size),
+        data_split_ratios = DATA_SPLIT_RATIOS,
     )
 
     # If there are no predictions, throw an error
@@ -116,20 +116,20 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
     seed_open = data["open"].values[training_window - 1]
 
     # Gets the RMSE scores for all values (OHLC + mean) for testing purposes
-    rmse_scores = compute_rmse(predicted, actual, actual_opens, mode=rmse_mode)
+    rmse_scores = compute_rmse(predicted, actual, actual_opens, mode = rmse_mode)
     # Reports the RMSE
     print(f"ANN ({N_STEPS}-step ahead) RMSE [{rmse_mode}]: {rmse_scores}")
 
     # Build and return the dataframe
-    result_df = build_result_df(predicted, actual_opens, idx=dates, seed_open=seed_open, n_steps=N_STEPS)
+    result_df = build_result_df(predicted, actual_opens, idx = dates, seed_open = seed_open, n_steps = N_STEPS)
 
     # Predict future rows if data extends beyond training window
-    feature_cols  = [c for c in data_before_targets.select_dtypes(include=[np.number]).columns
+    feature_cols = [c for c in data_before_targets.select_dtypes(include = [np.number]).columns
                      if c not in TARGET_COLS]
     features_full = data_before_targets[feature_cols].values
     future_preds, future_opens, future_dates = predict_future_rows(
         data_before_targets, data, features_full, features, labels, 
-        make_ann_predict(epochs=epochs, lr=lr, width=width, dropout=dropout, batch_size=batch_size),
+        make_ann_predict(epochs = epochs, lr = lr, width = width, dropout = dropout, batch_size = batch_size),
         N_STEPS,
     )
     if future_preds is not None:
@@ -143,10 +143,10 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
         
         future_df = build_result_df(future_preds,
                                     future_opens,
-                                    idx=future_target_dates,
-                                    seed_open=seed_open, n_steps=N_STEPS,
-                                    continuation_close=continuation_close)
-        result_df = pd.concat([result_df, future_df], ignore_index=False)
+                                    idx = future_target_dates,
+                                    seed_open = seed_open, n_steps = N_STEPS,
+                                    continuation_close = continuation_close)
+        result_df = pd.concat([result_df, future_df], ignore_index = False)
 
     if return_metrics:
         return (result_df, rmse_scores)

@@ -11,32 +11,32 @@ from plotly.subplots import make_subplots
 
 
 # Function for getting the data from yfinance - mainly for testing
-def get_data_yf(start_date, end_date, ticker="^GSPC"):
+def get_data_yf(start_date, end_date, ticker = "^GSPC"):
     import yfinance as yf
-    df = yf.download(ticker, start=start_date, end=end_date)
+    df = yf.download(ticker, start = start_date, end = end_date)
     df.columns = ["open", "high", "low", "close", "volume"]
-    df.dropna(inplace=True)
+    df.dropna(inplace = True)
     return df
 
 # Gets the data from the csv file from WRDS and combines with yfinance data
 # using yfinance's ratios for OHLC to multiply WRDS' daily value by (WRDS is more reliable)
-def get_data(start_date, end_date, data_file="Data/S&P 500 Composite.csv"):
+def get_data(start_date, end_date, data_file = "Data/S&P 500 Composite.csv"):
     # Reads only relevant columns from WRDS data - date, daily return and daily price
-    df = pd.read_csv(data_file, usecols=["YYYYMMDD", "DlyPrcRet", "DlyPrcInd"])
+    df = pd.read_csv(data_file, usecols = ["YYYYMMDD", "DlyPrcRet", "DlyPrcInd"])
 
     # Convert the string date to pandas datetime
-    df["Date"] = pd.to_datetime(df["YYYYMMDD"], format="%Y%m%d")
+    df["Date"] = pd.to_datetime(df["YYYYMMDD"], format = "%Y%m%d")
     # Use datetime as the index for dataframe
-    df.set_index("Date", inplace=True)
+    df.set_index("Date", inplace = True)
 
     # Get the start and end date in pandas datetime
     start_date = pd.to_datetime(start_date)
-    end_date   = pd.to_datetime(end_date)
+    end_date = pd.to_datetime(end_date)
 
     # Filter the data to only be between the start and end date inclusively
     filtered_df = df[(df.index >= start_date) & (df.index <= end_date)].copy()
     # Sort the data by date
-    filtered_df.sort_index(inplace=True)
+    filtered_df.sort_index(inplace = True)
 
     # Fetch OHLC ratios from yfinance
     y_finance = get_data_yf(start_date, end_date)
@@ -60,8 +60,8 @@ def get_data(start_date, end_date, data_file="Data/S&P 500 Composite.csv"):
     filtered_df["close"] = base_price * relative_close
 
     # Drop non-numeric columns (YYYYMMDD, etc.)
-    filtered_df = filtered_df.drop(columns=["YYYYMMDD"], errors="ignore")
-    filtered_df = filtered_df.select_dtypes(include=["number"])
+    filtered_df = filtered_df.drop(columns = ["YYYYMMDD"], errors = "ignore")
+    filtered_df = filtered_df.select_dtypes(include = ["number"])
 
     return filtered_df
 
@@ -73,7 +73,7 @@ def get_data(start_date, end_date, data_file="Data/S&P 500 Composite.csv"):
 #   labels - np.ndarray of size (n, len(target_cols))
 def get_features_and_labels(df: pd.DataFrame, target_cols: list):
     # Extract only numeric data from the inputted dataframe
-    df_numeric   = df.select_dtypes(include=[np.number]).copy()
+    df_numeric = df.select_dtypes(include = [np.number]).copy()
     # Any numeric columns remaining are kept if they're not in the target_cols (to be the labels)
     feature_cols = [c for c in df_numeric.columns if c not in target_cols]
     features = df_numeric[feature_cols].values
@@ -84,14 +84,14 @@ def get_features_and_labels(df: pd.DataFrame, target_cols: list):
 # Simple return for extracting a list of the feature names from the dataframe
 def get_feature_names(df: pd.DataFrame, target_cols: list) -> list:
     # Returns the feature column names - includes everything that's numeric EXCEPT any target columns
-    df_numeric = df.select_dtypes(include=[np.number])
+    df_numeric = df.select_dtypes(include = [np.number])
     return [c for c in df_numeric.columns if c not in target_cols]
 
 
 # Builds pattern dataset for KNN with Pattern Matching
 # Takes an array of the returns and a window,
 # Outputs features - rolling window of past returns, labels - next return after the window
-def build_pattern_dataset(returns, window=20):
+def build_pattern_dataset(returns, window = 20):
     features, labels = [], []
     for i in range(window, len(returns) - 1):
         features.append(returns[i - window: i])
@@ -102,9 +102,9 @@ def build_pattern_dataset(returns, window=20):
 # Should help KNN recognise patterns more easily
 def normalise_patterns(features: np.ndarray) -> np.ndarray:
     # Calculates the mean
-    mean = features.mean(axis=1, keepdims=True)
+    mean = features.mean(axis = 1, keepdims = True)
     # Calculates the standard deviation
-    std  = features.std(axis=1, keepdims=True) + 1e-8
+    std = features.std(axis = 1, keepdims = True) + 1e-8
     # Returns the normalised
     # Z = mu - x / sigma
     return (features - mean) / std
@@ -115,14 +115,14 @@ def rmse(label, prediction):
     return np.sqrt(np.mean((label - prediction) ** 2))
 
 #Splits the data (features and labels) into training, validation and testing
-def data_split(features, labels, split_ratio=(0.70, 0.15, 0.15)):
+def data_split(features, labels, split_ratio = (0.70, 0.15, 0.15)):
     # Works for numpy arrays and panda dataframes
     n = len(features)
     # Find the end of the training data, assumed to be 1 before start of validation
     train_end = int(n * split_ratio[0])
     # Find end of validation, assumed to be 1 before start of testing - testing
     # ratio value isn't actually used, inputted values must sum to 1 for this to work
-    val_end   = train_end + int(n * split_ratio[1])
+    val_end = train_end + int(n * split_ratio[1])
 
     # Support both numpy arrays and DataFrames
     def _slice(arr, start, end):
@@ -148,11 +148,11 @@ def data_split(features, labels, split_ratio=(0.70, 0.15, 0.15)):
 #   k is often not used, for knn it's referring to the size of each neighbourhood
 # Outputs: numpy arrays of the predicted values, the actual values and the rmse errors at each prediction
 def walk_forward_validation(features, labels, prediction_algorithm,
-                             data_split_ratios=(0.7, 0.15, 0.15), k=5):
+                             data_split_ratios = (0.7, 0.15, 0.15), k = 5):
     # Standardizes within the window, only on that training data to avoid any leakage
     def _standardise(train, test):
-        mean = train.mean(axis=0)
-        std  = train.std(axis=0) + 1e-8
+        mean = train.mean(axis = 0)
+        std = train.std(axis = 0) + 1e-8
         return (train - mean) / std, (test - mean) / std
 
     # Ensure numpy - any panda dataframes get converted to numpy arrays
@@ -164,7 +164,7 @@ def walk_forward_validation(features, labels, prediction_algorithm,
     # Split the data into training and testing
     n = len(features)
     training_window = int(n * data_split_ratios[0])
-    testing_window  = max(int(n * data_split_ratios[2]), 1)
+    testing_window = max(int(n * data_split_ratios[2]), 1)
 
     # Prepare the prediction and actual data lists
     predictions, actuals = [], []
@@ -174,7 +174,7 @@ def walk_forward_validation(features, labels, prediction_algorithm,
     # training, only evaluation
     for start in range(0, n - training_window - testing_window + 1, testing_window):
         train_end = start + training_window
-        test_end  = train_end + testing_window
+        test_end = train_end + testing_window
 
         # Get the feature and label training and testing data
         f_train = features[start:train_end]
@@ -186,7 +186,7 @@ def walk_forward_validation(features, labels, prediction_algorithm,
         f_train_s, f_test_s = _standardise(f_train, f_test)
 
         # Make predictions
-        preds = prediction_algorithm(f_train_s, l_train, f_test_s, k=k)
+        preds = prediction_algorithm(f_train_s, l_train, f_test_s, k = k)
 
         # Now save the predictions and actual values
         predictions.extend(preds)
@@ -195,7 +195,7 @@ def walk_forward_validation(features, labels, prediction_algorithm,
     # Convert all outputs to numpy arrays
     predictions = np.array(predictions)
     actuals = np.array(actuals)
-    rmse_vals = np.sqrt(np.mean((predictions - actuals) ** 2, axis=0))
+    rmse_vals = np.sqrt(np.mean((predictions - actuals) ** 2, axis = 0))
 
     return predictions, actuals, rmse_vals
 
@@ -211,13 +211,13 @@ def predict_future_rows(data_before_targets, data_after_targets, features_full, 
         return None, None, None
 
     # Standardize using the labeled data statistics
-    mean = features_labeled.mean(axis=0)
-    std  = features_labeled.std(axis=0) + 1e-8
+    mean = features_labeled.mean(axis = 0)
+    std = features_labeled.std(axis = 0) + 1e-8
     features_labeled_s = (features_labeled - mean) / std
-    features_full_s    = (features_full    - mean) / std
+    features_full_s = (features_full    - mean) / std
 
     # Predict using full feature set (so sequence models have context)
-    all_preds    = predict_fn(features_labeled_s, labels_labeled,
+    all_preds = predict_fn(features_labeled_s, labels_labeled,
                               features_full_s, **predict_kwargs)
     future_preds = np.asarray(all_preds)[-n_future:]
 
@@ -233,13 +233,13 @@ def predict_future_rows(data_before_targets, data_after_targets, features_full, 
 #   Estimator kwargs are passed into the estimator models constructor (in this case
 #    being passed into the Decision Tree Regressors constructor)
 def dtr_walk_forward_validation(features, labels, estimator_class,
-                                 data_split_ratios=(0.8, 0.1, 0.1),
-                                 k=None, **estimator_kwargs):
+                                 data_split_ratios = (0.8, 0.1, 0.1),
+                                 k = None, **estimator_kwargs):
     # Standardise function used to explicitly seperate training and testing data, 
     # standardizing them and returning the standardized values
     def _standardise(train, test):
-        mean = train.mean(axis=0)
-        std  = train.std(axis=0) + 1e-8
+        mean = train.mean(axis = 0)
+        std = train.std(axis = 0) + 1e-8
         return (train - mean) / std, (test - mean) / std
 
     # Ensure the inputs are numpy arrays, if panda dataframes then convert to numpy arrays
@@ -260,10 +260,10 @@ def dtr_walk_forward_validation(features, labels, estimator_class,
 
     for start in range(0, n - training_window - testing_window + 1, testing_window):
         train_end = start + training_window
-        test_end  = min(train_end + testing_window, n)
+        test_end = min(train_end + testing_window, n)
 
         f_train, l_train = features[start:train_end], labels[start:train_end]
-        f_test,  l_test  = features[train_end:test_end], labels[train_end:test_end]
+        f_test,  l_test = features[train_end:test_end], labels[train_end:test_end]
 
         f_train_s, f_test_s = _standardise(f_train, f_test)
 
@@ -278,9 +278,9 @@ def dtr_walk_forward_validation(features, labels, estimator_class,
         test_indices.extend(range(train_end, test_end))
 
     # Ensure all outputs are numpy arrays
-    predictions  = np.array(predictions)
+    predictions = np.array(predictions)
     actuals = np.array(actuals)
-    rmse_per_col = np.sqrt(np.mean((predictions - actuals) ** 2, axis=0))
+    rmse_per_col = np.sqrt(np.mean((predictions - actuals) ** 2, axis = 0))
 
     return predictions, actuals, rmse_per_col, test_indices
 
@@ -319,15 +319,15 @@ def reconstruct_prices(start_price, returns):
     return np.array(prices)
 
 # Save the old style matplotlib plots with rmse
-def save_results(predictions, actuals, rmse=0, model_name="model"):
+def save_results(predictions, actuals, rmse = 0, model_name = "model"):
     import matplotlib.pyplot as plt
     from datetime import datetime
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    plt.figure(figsize=(20, 10))
-    plt.plot(actuals,     label="Actual closing")
-    plt.plot(predictions, label="Predicted closing")
+    plt.figure(figsize = (20, 10))
+    plt.plot(actuals,     label = "Actual closing")
+    plt.plot(predictions, label = "Predicted closing")
     plt.legend()
-    plt.title(f"{model_name}  RMSE={rmse:.4f}")
+    plt.title(f"{model_name}  RMSE = {rmse:.4f}")
     plt.savefig(f"{model_name}_rmse-{rmse}_{ts}.png")
     plt.close()
 
@@ -342,20 +342,20 @@ def load_models_data(file_name):
     df = pd.read_csv()
 
 # --- Matplot Lib Plots - Line Graphs ---
-def plot_all_mp_graphs(model_results, model_name="test", save=False, show=True):    
+def plot_all_mp_graphs(model_results, model_name = "test", save = False, show = True):    
     # The price cols are the column names for the predicted prices
     # Rel cols are the predicted relative proportions (returns)
     # d_c referring to the daisy chained versions, using true n-step ahead - shows alternative
     #  interpretation to models accuracy and allows models to predict future data
     price_cols = ["open", "high", "low", "close"]
-    rel_cols   = ["open_rel", "high_rel", "low_rel", "close_rel"]
+    rel_cols = ["open_rel", "high_rel", "low_rel", "close_rel"]
     d_c_price_cols = ["daisy_chained_open", "daisy_chained_high", "daisy_chained_low", "daisy_chained_close"] 
     d_c_rel_cols = ["daisy_chained_open_rel", "daisy_chained_high_rel", "daisy_chained_low_rel", "daisy_chained_close_rel"]
 
     # Create a plot of graphs 4 tall, 4 wide with each figure being of size 16x14
     # Rows correspond to the price types - Open High Low Close
     # Columns correspond to: returns, absolute prices (1-step ahead), daisy chained returns, daisy chained absolute prices (true n-step ahead)
-    fig, axes = plt.subplots(4, 4, figsize=(16, 14))
+    fig, axes = plt.subplots(4, 4, figsize = (16, 14))
 
     # Iterate through each row of plots
     # Where zip() groups together the 1 and n step ahead returns and prices
@@ -368,35 +368,35 @@ def plot_all_mp_graphs(model_results, model_name="test", save=False, show=True):
             required_cols = [rel_col, abs_col, d_c_rel_col, d_c_abs_col]
             if all(col in df.columns for col in required_cols):
                 # Plot the returns
-                ax_rel.plot(df.index, df[rel_col].values, label=name)
+                ax_rel.plot(df.index, df[rel_col].values, label = name)
                 # Plot absolute predicted prices
-                ax_abs.plot(df.index, df[abs_col].values, label=name)
+                ax_abs.plot(df.index, df[abs_col].values, label = name)
                 # Plot daisy chained returns (should be equal to above returns, used for sanity checks)
-                ax_dc_rel.plot(df.index, df[d_c_rel_col].values, label=name)
+                ax_dc_rel.plot(df.index, df[d_c_rel_col].values, label = name)
                 # Plot daisy chained absolute prices
-                ax_dc_abs.plot(df.index, df[d_c_abs_col].values, label=name)
+                ax_dc_abs.plot(df.index, df[d_c_abs_col].values, label = name)
         
         # Now set the titles and all the labels for each subplot in this row
 
         # Returns plot
         ax_rel.set_title(f"Predicted {rel_col.capitalize()} (relative to open)")
         ax_rel.set_xlabel("Date")
-        ax_rel.legend(fontsize=6)
+        ax_rel.legend(fontsize = 6)
 
         # Absolute prices plot
         ax_abs.set_title(f"Predicted {abs_col.capitalize()} (price)")
         ax_abs.set_xlabel("Date")
-        ax_abs.legend(fontsize=6)
+        ax_abs.legend(fontsize = 6)
 
         # Daisy-Chained returns plot
         ax_dc_rel.set_title(f"Predicted {d_c_rel_col.capitalize()} (relative to open)")
         ax_dc_rel.set_xlabel("Date")
-        ax_dc_rel.legend(fontsize=6)
+        ax_dc_rel.legend(fontsize = 6)
         
         # Daisy-Chained prices plot
         ax_dc_abs.set_title(f"Predicted {d_c_abs_col.capitalize()} (price)")
         ax_dc_abs.set_xlabel("Date")
-        ax_dc_abs.legend(fontsize=6)
+        ax_dc_abs.legend(fontsize = 6)
 
     # Adjust the layout to prevent overlapping titles / labels
     plt.tight_layout()
@@ -412,20 +412,20 @@ def plot_all_mp_graphs(model_results, model_name="test", save=False, show=True):
         # Display the figure
         plt.show()
 
-def plot_mp_graphs(model_results, model_name="test", save=False, show=True):    
+def plot_mp_graphs(model_results, model_name = "test", save = False, show = True):    
     # The price cols are the column names for the predicted prices
     # Rel cols are the predicted relative proportions (returns)
     # d_c referring to the daisy chained versions, using true n-step ahead - shows alternative
     #  interpretation to models accuracy and allows models to predict future data
     price_cols = ["open", "high", "low", "close"]
-    rel_cols   = ["open_rel", "high_rel", "low_rel", "close_rel"]
+    rel_cols = ["open_rel", "high_rel", "low_rel", "close_rel"]
     d_c_price_cols = ["daisy_chained_open", "daisy_chained_high", "daisy_chained_low", "daisy_chained_close"] 
     d_c_rel_cols = ["daisy_chained_open_rel", "daisy_chained_high_rel", "daisy_chained_low_rel", "daisy_chained_close_rel"]
 
     # Create a plot of graphs 4 tall, 4 wide with each figure being of size 16x14
     # Rows correspond to the price types - Open High Low Close
     # Columns correspond to: returns, absolute prices (1-step ahead), daisy chained returns, daisy chained absolute prices (true n-step ahead)
-    fig, axes = plt.subplots(4, 4, figsize=(16, 14))
+    fig, axes = plt.subplots(4, 4, figsize = (16, 14))
 
     # Iterate through each row of plots
     # Where zip() groups together the 1 and n step ahead returns and prices
@@ -439,35 +439,35 @@ def plot_mp_graphs(model_results, model_name="test", save=False, show=True):
         required_cols = [rel_col, abs_col, d_c_rel_col, d_c_abs_col]
         if all(col in df.columns for col in required_cols):
             # Plot the returns
-            ax_rel.plot(df.index, df[rel_col].values, label=name)
+            ax_rel.plot(df.index, df[rel_col].values, label = name)
             # Plot absolute predicted prices
-            ax_abs.plot(df.index, df[abs_col].values, label=name)
+            ax_abs.plot(df.index, df[abs_col].values, label = name)
             # Plot daisy chained returns (should be equal to above returns, used for sanity checks)
-            ax_dc_rel.plot(df.index, df[d_c_rel_col].values, label=name)
+            ax_dc_rel.plot(df.index, df[d_c_rel_col].values, label = name)
             # Plot daisy chained absolute prices
-            ax_dc_abs.plot(df.index, df[d_c_abs_col].values, label=name)
+            ax_dc_abs.plot(df.index, df[d_c_abs_col].values, label = name)
         
         # Now set the titles and all the labels for each subplot in this row
 
         # Returns plot
         ax_rel.set_title(f"Predicted {rel_col.capitalize()} (relative to open)")
         ax_rel.set_xlabel("Date")
-        ax_rel.legend(fontsize=6)
+        ax_rel.legend(fontsize = 6)
 
         # Absolute prices plot
         ax_abs.set_title(f"Predicted {abs_col.capitalize()} (price)")
         ax_abs.set_xlabel("Date")
-        ax_abs.legend(fontsize=6)
+        ax_abs.legend(fontsize = 6)
 
         # Daisy-Chained returns plot
         ax_dc_rel.set_title(f"Predicted {d_c_rel_col.capitalize()} (relative to open)")
         ax_dc_rel.set_xlabel("Date")
-        ax_dc_rel.legend(fontsize=6)
+        ax_dc_rel.legend(fontsize = 6)
         
         # Daisy-Chained prices plot
         ax_dc_abs.set_title(f"Predicted {d_c_abs_col.capitalize()} (price)")
         ax_dc_abs.set_xlabel("Date")
-        ax_dc_abs.legend(fontsize=6)
+        ax_dc_abs.legend(fontsize = 6)
 
     # Adjust the layout to prevent overlapping titles / labels
     plt.tight_layout()
@@ -483,14 +483,14 @@ def plot_mp_graphs(model_results, model_name="test", save=False, show=True):
         plt.show()
 
 # --- Pyplot Plots - Candlesticks ---
-def plot_single_candlestick_graph(df, model_name="test", save=False, show=True):
+def plot_single_candlestick_graph(df, model_name = "test", save = False, show = True):
     # Create a candlestick graph using the dataframe inputted
-    fig = go.Figure(data=[go.Candlestick(
-                    x=df.index,
-                    open=df["open"],
-                    high=df["high"],
-                    low=df["low"],
-                    close=df["close"])])
+    fig = go.Figure(data = [go.Candlestick(
+                    x = df.index,
+                    open = df["open"],
+                    high = df["high"],
+                    low = df["low"],
+                    close = df["close"])])
 
     if save:
         time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -504,7 +504,7 @@ def plot_single_candlestick_graph(df, model_name="test", save=False, show=True):
         # Display the figure
         fig.show()
 
-def plot_candlestick_graphs(df, model_name="test", save=False, show=True):
+def plot_candlestick_graphs(df, model_name = "test", save = False, show = True):
     # Ensure required columns exist in the inputted df before plotting
     required_cols = [
         "open", "high", "low", "close",
@@ -519,45 +519,45 @@ def plot_candlestick_graphs(df, model_name="test", save=False, show=True):
 
     # Create a subplot layout of 1 row, 2 columns with appropriate titles - regular and daisy chained prices
     fig = make_subplots(
-        rows=1,
-        cols=2,
-        subplot_titles=("Regular Prices", "Daisy-Chained Prices")
+        rows = 1,
+        cols = 2,
+        subplot_titles = ("Regular Prices", "Daisy-Chained Prices")
     )
 
     # Left plot - the regular OHLC (Open High Low Close) prices
     fig.add_trace(
         go.Candlestick(
-            x=df.index,
-            open=df["open"],
-            high=df["high"],
-            low=df["low"],
-            close=df["close"],
-            name="Regular"
+            x = df.index,
+            open = df["open"],
+            high = df["high"],
+            low = df["low"],
+            close = df["close"],
+            name = "Regular"
         ),
-        row=1, col=1
+        row = 1, col = 1
     )
 
     # Right plot - the daisy chained OHLC (true n-step ahead)
     fig.add_trace(
         go.Candlestick(
-            x=df.index,
-            open=df["daisy_chained_open"],
-            high=df["daisy_chained_high"],
-            low=df["daisy_chained_low"],
-            close=df["daisy_chained_close"],
-            name="Daisy Chained"
+            x = df.index,
+            open = df["daisy_chained_open"],
+            high = df["daisy_chained_high"],
+            low = df["daisy_chained_low"],
+            close = df["daisy_chained_close"],
+            name = "Daisy Chained"
         ),
-        row=1, col=2
+        row = 1, col = 2
     )
 
 
     # Now add names to the axes
     fig.update_layout(
-        title="Candlestick Comparison",
-        xaxis_title="Date",
-        yaxis_title="Price",
-        xaxis2_title="Date",
-        yaxis2_title="Price"
+        title = "Candlestick Comparison",
+        xaxis_title = "Date",
+        yaxis_title = "Price",
+        xaxis2_title = "Date",
+        yaxis2_title = "Price"
     )
     if save:
         time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

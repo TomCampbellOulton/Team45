@@ -1,5 +1,5 @@
 # Predicts open, high, low, close RELATIVE TO CURRENT OPEN (deterministic)
-# N_STEPS=0  → nowcast  |  N_STEPS≥1 → N-step ahead
+# N_STEPS = 0  → nowcast  |  N_STEPS≥1 → N-step ahead
 
 import random
 import torch
@@ -13,7 +13,7 @@ from upgraded_utilities import feature_engineering, walk_forward_validation, get
 from model_utils import build_targets, build_result_df, compute_rmse, TARGET_COLS, generate_trading_dates, generate_future_dates
 
 # Set the seeds to ensure all 'random' aspects are deterministic hence reproducable for others
-def set_seed(seed=42):
+def set_seed(seed = 42):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -27,11 +27,11 @@ class CNNLSTMModel(nn.Module):
     def __init__(self, input_features, seq_len):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv1d(input_features, 32, kernel_size=3, padding=1), nn.ReLU(),
-            nn.Conv1d(32, 64, kernel_size=3, padding=1),             nn.ReLU(),
+            nn.Conv1d(input_features, 32, kernel_size = 3, padding = 1), nn.ReLU(),
+            nn.Conv1d(32, 64, kernel_size = 3, padding = 1),             nn.ReLU(),
         )
-        self.lstm = nn.LSTM(input_size=64, hidden_size=32, num_layers=1, batch_first=True)
-        self.fc   = nn.Sequential(
+        self.lstm = nn.LSTM(input_size = 64, hidden_size = 32, num_layers = 1, batch_first = True)
+        self.fc = nn.Sequential(
             nn.Linear(32, 16), nn.ReLU(),
             nn.Linear(16, 4),
         )
@@ -53,14 +53,14 @@ def create_sequences(features, labels, seq_len, n_steps):
 
 
 def make_cnn_lstm_predict(n_steps):
-    def cnn_lstm_predict(feature_train_data, label_train_data, feature_test_data, k=None):
+    def cnn_lstm_predict(feature_train_data, label_train_data, feature_test_data, k = None):
         set_seed(42)
         seq_len = 20
 
         # NOTE: feature_train_data / feature_test_data are already standardised by
         # walk_forward_validation — do NOT apply any additional scaling here.
         X_train, y_train = create_sequences(feature_train_data, label_train_data, seq_len, n_steps)
-        X_test,  _       = create_sequences(feature_test_data,
+        X_test,  _ = create_sequences(feature_test_data,
                                              np.zeros((len(feature_test_data), 4)), seq_len, n_steps)
 
         # Handle case where test window is too small to create sequences
@@ -68,14 +68,14 @@ def make_cnn_lstm_predict(n_steps):
             # Return zero predictions with correct shape
             return np.zeros((len(feature_test_data), 4))
 
-        X_train = torch.tensor(X_train, dtype=torch.float32)
-        y_train = torch.tensor(y_train, dtype=torch.float32)
-        X_test  = torch.tensor(X_test,  dtype=torch.float32)
+        X_train = torch.tensor(X_train, dtype = torch.float32)
+        y_train = torch.tensor(y_train, dtype = torch.float32)
+        X_test = torch.tensor(X_test,  dtype = torch.float32)
 
-        model         = CNNLSTMModel(X_train.shape[2], seq_len)
-        optimiser     = optim.Adam(model.parameters(), lr=0.001)
+        model = CNNLSTMModel(X_train.shape[2], seq_len)
+        optimiser = optim.Adam(model.parameters(), lr = 0.001)
         loss_function = nn.MSELoss()
-        loader        = DataLoader(TensorDataset(X_train, y_train), batch_size=32, shuffle=False)
+        loader = DataLoader(TensorDataset(X_train, y_train), batch_size = 32, shuffle = False)
 
         model.train()
         for _ in range(50):
@@ -91,8 +91,8 @@ def make_cnn_lstm_predict(n_steps):
 
         # Pad the front so output length == len(feature_test_data).
         # Forward-fill from the first valid prediction to avoid zero-spikes.
-        pad          = seq_len + max(n_steps - 1, 0)
-        output       = np.empty((len(feature_test_data), 4))
+        pad = seq_len + max(n_steps - 1, 0)
+        output = np.empty((len(feature_test_data), 4))
         output[pad:] = preds
         if len(preds) > 0:
             output[:pad] = preds[0]
@@ -101,13 +101,13 @@ def make_cnn_lstm_predict(n_steps):
     return cnn_lstm_predict
 
 
-def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
-         DATA_SPLIT_RATIOS=(0.8, 0.1, 0.1),
-         N_STEPS=5,
-         rmse_mode="price",
+def main(START_DATE = "2010-01-01", END_DATE = "2025-12-31",
+         DATA_SPLIT_RATIOS = (0.8, 0.1, 0.1),
+         N_STEPS = 5,
+         rmse_mode = "price",
          # ── Evaluation flag ─────────────────────────────────────────────
-         FUTURE_STEPS=None,
-         return_metrics=False):
+         FUTURE_STEPS = None,
+         return_metrics = False):
     # ── Resolve FUTURE_STEPS ────────────────────────────────────────────
     if FUTURE_STEPS is None:
         FUTURE_STEPS = N_STEPS
@@ -125,28 +125,28 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
 
     predicted, actual, _ = walk_forward_validation(
         features, labels, make_cnn_lstm_predict(N_STEPS),
-        data_split_ratios=DATA_SPLIT_RATIOS,
+        data_split_ratios = DATA_SPLIT_RATIOS,
     )
 
     # actual_opens[t] = open price at the reference time for prediction t.
     # Targets were built as value[t+n] / open[t], so open[t] is the correct denominator.
     training_window = int(len(features) * DATA_SPLIT_RATIOS[0])
-    actual_opens    = data["open"].values[training_window: training_window + len(predicted)]
+    actual_opens = data["open"].values[training_window: training_window + len(predicted)]
     # Generate continuous trading dates for predictions (eliminates date gaps)
-    dates           = generate_trading_dates(
+    dates = generate_trading_dates(
         data["Date"].values[training_window],
         len(predicted),
         N_STEPS
     )
-    seed_open       = data["open"].values[training_window - 1]   # last known training open
+    seed_open = data["open"].values[training_window - 1]   # last known training open
 
-    rmse_scores = compute_rmse(predicted, actual, actual_opens, mode=rmse_mode)
+    rmse_scores = compute_rmse(predicted, actual, actual_opens, mode = rmse_mode)
     print(f"CNN-LSTM-DET ({N_STEPS}-step ahead) RMSE [{rmse_mode}]: {rmse_scores}")
 
-    result_df = build_result_df(predicted, actual_opens, idx=dates, seed_open=seed_open, n_steps=N_STEPS)
+    result_df = build_result_df(predicted, actual_opens, idx = dates, seed_open = seed_open, n_steps = N_STEPS)
     
     # Predict future rows if data extends beyond training window
-    feature_cols  = [c for c in data_before_targets.select_dtypes(include=[np.number]).columns
+    feature_cols = [c for c in data_before_targets.select_dtypes(include = [np.number]).columns
                      if c not in TARGET_COLS]
     features_full = data_before_targets[feature_cols].values
     future_preds, future_opens, future_dates = predict_future_rows(
@@ -162,10 +162,10 @@ def main(START_DATE="2010-01-01", END_DATE="2025-12-31",
         # This ensures daisy-chained prices connect seamlessly without jumping
         continuation_close = result_df["daisy_chained_close"].iloc[-1]
         
-        future_df = build_result_df(future_preds, future_opens, idx=future_target_dates,
-                                    seed_open=seed_open, n_steps=N_STEPS,
-                                    continuation_close=continuation_close)
-        result_df = pd.concat([result_df, future_df], ignore_index=False)
+        future_df = build_result_df(future_preds, future_opens, idx = future_target_dates,
+                                    seed_open = seed_open, n_steps = N_STEPS,
+                                    continuation_close = continuation_close)
+        result_df = pd.concat([result_df, future_df], ignore_index = False)
 
     if return_metrics:
         return (result_df, rmse_scores)

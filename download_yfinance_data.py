@@ -3,18 +3,18 @@ import pandas as pd
 
 # Download data
 ticker = "^GSPC"
-df = yf.download(ticker, start="2000-01-01", auto_adjust=False)
+df = yf.download(ticker, start = "2000-01-01", auto_adjust = False)
 
 # Reset index
 df = df.reset_index()
 
 # Rename columns
-df.rename(columns={
+df.rename(columns = {
     "Date": "DlyCalDt",
     "Close": "Close",
     "Adj Close": "AdjClose",
     "Volume": "DlyUsdCnt"
-}, inplace=True)
+}, inplace = True)
 
 # Returns
 df["DlyTotRet"] = df["AdjClose"].pct_change()
@@ -69,6 +69,6 @@ cols = [
 df = df[cols]
 
 # Save file
-df.to_csv("Data/S&P 500 Composite.csv", index=False)
+df.to_csv("Data/S&P 500 Composite.csv", index = False)
 
 print("File created: sp500_filled.csv")

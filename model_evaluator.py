@@ -3,16 +3,16 @@ import numpy as np
 import os
 
 def get_models_data(model_path):
-    df = pd.read_csv(model_path, index_col=0, header=0)
+    df = pd.read_csv(model_path, index_col = 0, header = 0)
     return df
 
 def parse_dates_safe(idx):
     try:
-        dt_idx = pd.to_datetime(idx, dayfirst=True)
+        dt_idx = pd.to_datetime(idx, dayfirst = True)
         if dt_idx.isna().all():
-            dt_idx = pd.to_datetime(idx, dayfirst=False)
+            dt_idx = pd.to_datetime(idx, dayfirst = False)
     except:
-        dt_idx = pd.to_datetime(idx, dayfirst=False)
+        dt_idx = pd.to_datetime(idx, dayfirst = False)
     return dt_idx
 
 
@@ -24,8 +24,8 @@ def main():
     seer = get_models_data("Newest Results/Seer.csv")
     seer = seer[required_cols].copy()
     seer.index = parse_dates_safe(seer.index)
-    seer = seer[~seer.index.duplicated(keep='first')]
-    seer[required_cols] = seer[required_cols].apply(pd.to_numeric, errors='coerce')
+    seer = seer[~seer.index.duplicated(keep = 'first')]
+    seer[required_cols] = seer[required_cols].apply(pd.to_numeric, errors = 'coerce')
     seer = seer.sort_index()
 
     # Find all model CSVs
@@ -47,13 +47,13 @@ def main():
 
         df = df[required_cols].copy()
         df.index = parse_dates_safe(df.index)
-        df = df[~df.index.duplicated(keep='first')]
-        df[required_cols] = df[required_cols].apply(pd.to_numeric, errors='coerce')
+        df = df[~df.index.duplicated(keep = 'first')]
+        df[required_cols] = df[required_cols].apply(pd.to_numeric, errors = 'coerce')
         df = df.sort_index()
 
         # Allign using forward fill - needed for weekly adjusteds
         df_aligned = df.copy()
-        seer_aligned = seer.reindex(df.index, method='ffill')  # forward fill
+        seer_aligned = seer.reindex(df.index, method = 'ffill')  # forward fill
 
         
         mae = (df_aligned - seer_aligned).abs()

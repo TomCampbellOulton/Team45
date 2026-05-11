@@ -42,10 +42,10 @@ TUNING_KWARGS = dict(
 # Method-specific overrides (merged with TUNING_KWARGS when tuning is turned on).
 
 # No additional kwargs needed
-GRID_KWARGS    = {}
+GRID_KWARGS = {}
 # Keep a fixed seed for consistency and determinism
-RANDOM_KWARGS  = dict(n_trials=20, seed=42)
-BAYESIAN_KWARGS = dict(n_trials=25, n_initial=5)
+RANDOM_KWARGS = dict(n_trials = 20, seed = 42)
+BAYESIAN_KWARGS = dict(n_trials = 25, n_initial = 5)
 
 
 # --- Configure prediction horizon ---
@@ -53,8 +53,8 @@ BAYESIAN_KWARGS = dict(n_trials=25, n_initial=5)
 END_DATE = "2027-04-18"
 
 # Load just the data dates to find the last one
-df_dates = pd.read_csv("Data/S&P 500 Composite.csv", usecols=["YYYYMMDD"])
-df_dates["Date"] = pd.to_datetime(df_dates["YYYYMMDD"], format="%Y%m%d")
+df_dates = pd.read_csv("Data/S&P 500 Composite.csv", usecols = ["YYYYMMDD"])
+df_dates["Date"] = pd.to_datetime(df_dates["YYYYMMDD"], format = "%Y%m%d")
 last_data_date = df_dates["Date"].max()
 last_data_date_str = last_data_date.strftime("%Y-%m-%d")
 
@@ -88,18 +88,18 @@ print(f"Last data date: {last_data_date_str}")
 if RUN_TUNING:
     if TUNING_METHOD == "grid":
         from Tuning.run_grid_search import run_all as _tune
-        _tune(models=TUNING_MODELS, **TUNING_KWARGS, **GRID_KWARGS)
+        _tune(models = TUNING_MODELS, **TUNING_KWARGS, **GRID_KWARGS)
 
     elif TUNING_METHOD == "random":
         from Tuning.run_random_search import run_all as _tune
-        _tune(models=TUNING_MODELS, **TUNING_KWARGS, **RANDOM_KWARGS)
+        _tune(models = TUNING_MODELS, **TUNING_KWARGS, **RANDOM_KWARGS)
 
     elif TUNING_METHOD == "bayesian":
         from Tuning.run_bayesian_opt import run_all as _tune
-        _tune(models=TUNING_MODELS, **TUNING_KWARGS, **BAYESIAN_KWARGS)
+        _tune(models = TUNING_MODELS, **TUNING_KWARGS, **BAYESIAN_KWARGS)
 
     else:
-        raise ValueError(f"Unknown TUNING_METHOD={TUNING_METHOD!r}. Please choose from 'grid', 'random', or 'bayesian'.")
+        raise ValueError(f"Unknown TUNING_METHOD = {TUNING_METHOD!r}. Please choose from 'grid', 'random', or 'bayesian'.")
 
 
 # Now evaluate the models
@@ -127,7 +127,7 @@ for name, main_function in models.items():
         # open_rel, high_rel, low_rel, close_rel, open, high, low, close
         # And the daisy chained versions for each, where the relatives (returns) should be identical to before,
         # but are displayed as a sanity check - if unequal there's an error
-        model_results[name] = main_function(END_DATE=END_DATE, N_STEPS=N_STEPS)
+        model_results[name] = main_function(END_DATE = END_DATE, N_STEPS = N_STEPS)
     except Exception as e:
         print(f"{name} failed: {e}")
 """
@@ -140,11 +140,11 @@ for name, main_function in models.items():
         # And the daisy chained versions for each, where the relatives (returns) should be identical to before,
         # but are displayed as a sanity check - if unequal there's an error
         model_results[name] = main_function(
-            END_DATE=END_DATE,
+            END_DATE = END_DATE,
             # Always 1-step for train/test
-            N_STEPS=1,
+            N_STEPS = 1,
             # The large computed horizon for future predictions
-            FUTURE_STEPS=N_STEPS
+            FUTURE_STEPS = N_STEPS
         )
     except Exception as e:
         print(f"{name} failed: {e}")
@@ -161,13 +161,13 @@ for name in models.keys():
 # Display the results in a candlestick plot and save the matplotlib plots
 for name, df in model_results.items():
     # Call the plot matplot lib graphs function to render and save those plots
-    plot_mp_graphs(df, name, save=True, show=False)
+    plot_mp_graphs(df, name, save = True, show = False)
     # And call the pyplot candlesticks function to render, save and display those results
-    plot_candlestick_graphs(df, name, save=True, show=False)
+    plot_candlestick_graphs(df, name, save = True, show = False)
 
 
 # Now run the backtest!
-bt(save=True, show=True)
+bt(save = True, show = True)
 
 # And get metrics for each file!
 me()

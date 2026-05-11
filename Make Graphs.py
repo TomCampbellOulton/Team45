@@ -6,11 +6,11 @@ os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
 
 
 # Create a new directed graph
-dot = Digraph(comment='ANN Model', format='png')
-dot.attr(rankdir='TB', size='10')
+dot = Digraph(comment = 'ANN Model', format = 'png')
+dot.attr(rankdir = 'TB', size = '10')
 
 # Input layer
-dot.node('Input', 'Input\n(input_size)', shape='box', style='filled', color='lightgray')
+dot.node('Input', 'Input\n(input_size)', shape = 'box', style = 'filled', color = 'lightgray')
 
 # Hidden layers
 layers = [
@@ -31,11 +31,11 @@ layers = [
 ]
 
 # Output layer
-dot.node('Output', 'Output\n4', shape='box', style='filled', color='green')
+dot.node('Output', 'Output\n4', shape = 'box', style = 'filled', color = 'green')
 
 # Add hidden layers
 for name, label, color in layers:
-    dot.node(name, label, shape='box' if 'Dense' in name or 'Dropout' in name else 'ellipse', style='filled', color=color)
+    dot.node(name, label, shape = 'box' if 'Dense' in name or 'Dropout' in name else 'ellipse', style = 'filled', color = color)
 
 # Connect nodes
 connections = ['Input', 'Dense256', 'ReLU256', 'Dropout256', 'Dense128', 'ReLU128', 'Dropout128',
@@ -45,4 +45,4 @@ for i in range(len(connections)-1):
     dot.edge(connections[i], connections[i+1])
 
 # Render and open the diagram
-dot.render('ann_diagram', view=True)
+dot.render('ann_diagram', view = True)

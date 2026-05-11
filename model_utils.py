@@ -7,7 +7,7 @@ COLS = ["open", "high", "low", "close"]
 TARGET_COLS = ["target_open", "target_high", "target_low", "target_close"]
 
 
-def generate_trading_dates(start_date, n_predictions, n_steps=1):
+def generate_trading_dates(start_date, n_predictions, n_steps = 1):
     """
     Generate continuous trading dates for predictions.
     
@@ -36,7 +36,7 @@ def generate_trading_dates(start_date, n_predictions, n_steps=1):
             start_date = pd.Timestamp(start_date)
         
         # Get a sufficient range of trading days
-        end_date_estimate = start_date + pd.Timedelta(days=365 * 3)
+        end_date_estimate = start_date + pd.Timedelta(days = 365 * 3)
         all_trading_days = nyse.sessions_window(start_date, end_date_estimate)
         
         # Find the index of start_date in the trading days
@@ -69,9 +69,9 @@ def generate_trading_dates(start_date, n_predictions, n_steps=1):
     except (ImportError, Exception) as e:
         # Fallback to business day offset
         start_date = pd.Timestamp(start_date)
-        return pd.bdate_range(start=start_date, periods=n_predictions, freq='B') + pd.tseries.offsets.BDay(n_steps)
+        return pd.bdate_range(start = start_date, periods = n_predictions, freq = 'B') + pd.tseries.offsets.BDay(n_steps)
 
-def generate_future_dates(last_test_date, n_future_predictions, n_steps=1):
+def generate_future_dates(last_test_date, n_future_predictions, n_steps = 1):
     """
     Generate target dates for future predictions, continuing from test predictions.
     
@@ -97,7 +97,7 @@ def generate_future_dates(last_test_date, n_future_predictions, n_steps=1):
             last_test_date = pd.Timestamp(last_test_date)
         
         # Get trading days starting from the day after last_test_date
-        end_date_estimate = last_test_date + pd.Timedelta(days=365)
+        end_date_estimate = last_test_date + pd.Timedelta(days = 365)
         all_trading_days = nyse.sessions_window(last_test_date, end_date_estimate)
         
         # Find last_test_date in the calendar
@@ -127,8 +127,8 @@ def generate_future_dates(last_test_date, n_future_predictions, n_steps=1):
     except (ImportError, Exception):
         # Fallback to business day offset
         last_test_date = pd.Timestamp(last_test_date)
-        return pd.bdate_range(start=last_test_date + pd.tseries.offsets.BDay(1), 
-                             periods=n_future_predictions, freq='B')
+        return pd.bdate_range(start = last_test_date + pd.tseries.offsets.BDay(1), 
+                             periods = n_future_predictions, freq = 'B')
 
 # If n_steps is 0, the labels would be the current data, so n should always be larger
 # than 0 (1 or more) to ensure the target labels are 'future'
@@ -146,27 +146,27 @@ def build_targets(df: pd.DataFrame, n_steps: int) -> pd.DataFrame:
 def build_result_df_chained(predicted_rel: np.ndarray,
                              seed_open: float,
                              n_steps: int = 1,
-                             idx=None) -> pd.DataFrame:
-    predicted_rel  = np.asarray(predicted_rel)
-    n              = len(predicted_rel)
+                             idx = None) -> pd.DataFrame:
+    predicted_rel = np.asarray(predicted_rel)
+    n = len(predicted_rel)
 
     # ── 1. Build chain on non-overlapping anchor points ───────────────────────
-    chain_indices  = np.arange(0, n, max(n_steps, 1))        # [0, 5, 10, ...]
+    chain_indices = np.arange(0, n, max(n_steps, 1))        # [0, 5, 10, ...]
     chain_open_rel = predicted_rel[chain_indices, 0]          # (m,)
-    m              = len(chain_open_rel)
-    chain_opens    = np.empty(m)
-    current_open   = seed_open
+    m = len(chain_open_rel)
+    chain_opens = np.empty(m)
+    current_open = seed_open
     for i in range(m):
         chain_opens[i] = chain_open_rel[i] * current_open
-        current_open   = chain_opens[i]                       # feeds next link
+        current_open = chain_opens[i]                       # feeds next link
 
     # ── 2. Interpolate chained open back to every step ────────────────────────
     full_open = np.interp(np.arange(n), chain_indices, chain_opens)   # (n,)
 
     # ── 3. Apply intraday ratios from raw model predictions ───────────────────
-    safe_open_rel  = np.where(np.abs(predicted_rel[:, 0]) < 1e-8, 1.0, predicted_rel[:, 0])
-    intraday_high  = predicted_rel[:, 1] / safe_open_rel
-    intraday_low   = predicted_rel[:, 2] / safe_open_rel
+    safe_open_rel = np.where(np.abs(predicted_rel[:, 0]) < 1e-8, 1.0, predicted_rel[:, 0])
+    intraday_high = predicted_rel[:, 1] / safe_open_rel
+    intraday_low = predicted_rel[:, 2] / safe_open_rel
     intraday_close = predicted_rel[:, 3] / safe_open_rel
 
     prices = np.column_stack([
@@ -188,12 +188,12 @@ def build_result_df_chained(predicted_rel: np.ndarray,
         "high":      prices[:, 1],
         "low":       prices[:, 2],
         "close":     prices[:, 3],
-    }, index=idx)
+    }, index = idx)
 
 
 def build_result_df(predicted_rel: np.ndarray,
                     actual_opens: np.ndarray,
-                    idx=None,
+                    idx = None,
                     seed_open: float = None,
                     n_steps: int = 1,
                     continuation_close: float = None) -> pd.DataFrame:
@@ -236,14 +236,14 @@ def build_result_df(predicted_rel: np.ndarray,
     else:
         effective_seed = seed_open
     
-    actual_opens  = np.asarray(actual_opens).reshape(-1, 1)  # (n, 1) for broadcasting
+    actual_opens = np.asarray(actual_opens).reshape(-1, 1)  # (n, 1) for broadcasting
 
     if idx is None:
         idx = pd.RangeIndex(len(predicted_rel))
 
     prices = predicted_rel * actual_opens   # (n, 4) — each row scaled by its own open
 
-    daisy_chained_df = build_result_df_chained(predicted_rel, seed_open=effective_seed, n_steps=n_steps)
+    daisy_chained_df = build_result_df_chained(predicted_rel, seed_open = effective_seed, n_steps = n_steps)
 
     return pd.DataFrame({
         "open_rel":  predicted_rel[:, 0],
@@ -262,7 +262,7 @@ def build_result_df(predicted_rel: np.ndarray,
         "daisy_chained_high":      daisy_chained_df["high"].values,
         "daisy_chained_low":       daisy_chained_df["low"].values,
         "daisy_chained_close":     daisy_chained_df["close"].values,
-    }, index=idx)
+    }, index = idx)
 
 # Computes the RMSE between predicted and actual values
 # Inputs:
@@ -282,11 +282,11 @@ def compute_rmse(predicted_rel: np.ndarray,
 
     # Case 1 - evaluate the prices
     if mode == "price":
-        pred  = predicted_rel * actual_opens
+        pred = predicted_rel * actual_opens
         truth = actual_rel    * actual_opens
     # Case 2 - evaluate the returns
     elif mode == "relative":
-        pred  = predicted_rel
+        pred = predicted_rel
         truth = actual_rel
     # Case 3 - invalid option, throw an error
     else:

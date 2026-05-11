@@ -29,12 +29,12 @@ RANDOM_TRIALS = 20
 # Load the csv data to numpy array using pandas
 def load_csv(path, col):
     df = pd.read_csv(path)
-    df.set_index(df.columns[0], inplace=True)
+    df.set_index(df.columns[0], inplace = True)
 
     # Forward fill the missing values ******************************************************************IMPORTANT DESIGN QUESTION FOR GROUP ****************************************
     df = df.ffill()
 
-    return df[col].to_numpy(dtype=float), df.index
+    return df[col].to_numpy(dtype = float), df.index
 
 
 # The actual backtest
@@ -72,8 +72,8 @@ def random_strat(prices):
     trials = []
     for t in range(RANDOM_TRIALS):
         rng = np.random.default_rng(RANDOM_SEED + t)
-        trials.append(rng.choice(choices, size=len(prices)).astype(float))
-    return np.mean(trials, axis=0)
+        trials.append(rng.choice(choices, size = len(prices)).astype(float))
+    return np.mean(trials, axis = 0)
 
 # The strategy the model will use - strat is buy (go long) if the current price
 def model_strat(prices, predictions):
@@ -83,7 +83,7 @@ def model_strat(prices, predictions):
     # Create array to store our strat - [-1, 1, 0] means go short go long then stay neutral
     pos = np.zeros(len(prices))
     # If the signal is sufficiently strong (we're happy it's a good strong signal) then buy (go long)
-    pos[signal >= BUY_THRESHOLD] =  1
+    pos[signal >= BUY_THRESHOLD] = 1
     # If the signal is too weak (we're fairly sure it's going to drop in price) then go short if allowing it, otherwise stay neutral
     pos[signal <= -SELL_THRESHOLD] = -1 if ALLOW_SHORT else 0
     return pos
@@ -91,7 +91,7 @@ def model_strat(prices, predictions):
 
 # Main
 
-def main(show=False, save=True):
+def main(show = False, save = True):
 
     prices, dates = load_csv(REAL_FILE, REAL_COL)
 
@@ -110,13 +110,13 @@ def main(show=False, save=True):
         predictions, prediction_dates = load_csv(path, col)
 
         # Convert predictions to df
-        predicted_series = pd.Series(predictions, index=pd.to_datetime(prediction_dates))
+        predicted_series = pd.Series(predictions, index = pd.to_datetime(prediction_dates))
         # Get rid of any duplicated predictions by keeping the last prediction for each date
         predicted_series = predicted_series.groupby(predicted_series.index).last()
         
         # Re allign the dates to make sure they match
         aligned_dates = pd.to_datetime(dates)
-        aligned_predictions = predicted_series.reindex(aligned_dates, method='ffill')
+        aligned_predictions = predicted_series.reindex(aligned_dates, method = 'ffill')
 
         # Get a numpy array for the results
         aligned_predictions = aligned_predictions.to_numpy()
@@ -140,7 +140,7 @@ def main(show=False, save=True):
 
     # Display our results
     for name, curve in results.items():
-        plt.plot(aligned_dates, curve, label=name)
+        plt.plot(aligned_dates, curve, label = name)
 
     plt.title("Equity Curves")
     plt.xlabel("Day")
@@ -157,7 +157,7 @@ def main(show=False, save=True):
     # Now display our results again but without the best (overshadowing)
     for name, curve in results.items():
         if name != "Best Case Scenario":
-            plt.plot(aligned_dates, curve, label=name)
+            plt.plot(aligned_dates, curve, label = name)
 
     plt.title("Equity Curves")
     plt.xlabel("Day")
@@ -172,4 +172,4 @@ def main(show=False, save=True):
         plt.show()
 
 if __name__ == "__main__":
-    main(show=True, save=True)
+    main(show = True, save = True)
